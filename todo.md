@@ -59,3 +59,16 @@
 - All vitest tests passing (14/14)
 - All features fully functional
 - Ready to publish to production
+
+
+## AUGMENTATION: Optional Languages & Inline Media
+- [ ] Update database schema: add language selection flags (en, de, ru as booleans)
+- [ ] Update server routes: accept language selection in generate request
+- [ ] Rebuild Generate page: add language checkboxes (EN / DE / RU)
+- [ ] Implement inline poster rendering in chat
+- [ ] Implement inline audio/music player in chat
+- [ ] Implement inline video player in chat
+- [ ] Remove forced trilingual output
+- [ ] Update vitest tests for optional languages
+- [ ] Test all media types render correctly inline
+- [ ] Push to GitHub repository

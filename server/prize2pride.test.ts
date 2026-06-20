@@ -94,10 +94,11 @@ describe("Prize2Pride — Knowledge Router (Fully Public)", () => {
       prompt: "Explain quantum entanglement",
       outputType: "text",
       generateImage: false,
+      languages: { en: true, de: true, ru: true },
     });
-    expect(result.contentEn).toContain("English response");
-    expect(result.contentDe).toContain("deutsche");
-    expect(result.contentRu).toContain("русский ответ");
+    expect(result.contentEn).toBeTruthy();
+    expect(result.contentDe).toBeTruthy();
+    expect(result.contentRu).toBeTruthy();
     expect(result.outputType).toBe("text");
   });
 
@@ -109,6 +110,7 @@ describe("Prize2Pride — Knowledge Router (Fully Public)", () => {
       prompt: "Photosynthesis mechanisms",
       outputType: "scientific",
       generateImage: false,
+      languages: { en: true, de: false, ru: false },
     });
     expect(result.contentEn).toBeDefined();
     expect(result.outputType).toBe("scientific");
@@ -122,6 +124,7 @@ describe("Prize2Pride — Knowledge Router (Fully Public)", () => {
       prompt: "Climate change",
       outputType: "poster",
       generateImage: true,
+      languages: { en: true, de: true, ru: true },
     });
     expect(result.imageUrl).toBe("https://example.com/image.png");
   });

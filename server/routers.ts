@@ -67,23 +67,33 @@ export const appRouter = router({
           prompt: z.string(),
           outputType: z.enum(["text", "scientific", "poster", "creative", "song"]),
           generateImage: z.boolean().default(false),
+          languages: z.object({
+            en: z.boolean().default(true),
+            de: z.boolean().default(false),
+            ru: z.boolean().default(false),
+          }).default({ en: true, de: false, ru: false }),
         })
       )
       .mutation(async ({ input }) => {
-        const { sessionId, prompt, outputType, generateImage: shouldGenerateImage } = input;
+        const { sessionId, prompt, outputType, generateImage: shouldGenerateImage, languages } = input;
+        
+        // Build list of selected languages
+        const selectedLangs = [];
+        if (languages.en) selectedLangs.push("English");
+        if (languages.de) selectedLangs.push("German");
+        if (languages.ru) selectedLangs.push("Russian");
 
-        // Build the generation prompt based on output type
-        let systemPrompt = `You are Prize2Pride, a trilingual AI knowledge engine. Generate comprehensive knowledge in English, German, and Russian simultaneously.
+        if (selectedLangs.length === 0) {
+          throw new Error("At least one language must be selected");
+        }
 
-Output format: Separate each language with clear markers:
----ENGLISH---
-[English content here]
+        // Build the generation prompt based on selected languages
+        let systemPrompt = `You are Prize2Pride, a multilingual AI knowledge engine. Generate comprehensive knowledge in: ${selectedLangs.join(", ")}.
 
----GERMAN---
-[German content here]
-
----RUSSIAN---
-[Russian content here]`;
+Output format: Separate each language with clear markers:`;
+        if (languages.en) systemPrompt += `\n---ENGLISH---\n[English content here]`;
+        if (languages.de) systemPrompt += `\n---GERMAN---\n[German content here]`;
+        if (languages.ru) systemPrompt += `\n---RUSSIAN---\n[Russian content here]`;
 
         if (outputType === "scientific") {
           systemPrompt += `\n\nFor scientific output, structure as:
@@ -130,14 +140,30 @@ Include rhythm and rhyme scheme.`;
           rawContent = JSON.stringify(rawContent);
         }
 
-        // Parse trilingual output
-        const enMatch = rawContent.match(/---ENGLISH---([\s\S]*?)(?=---GERMAN---|---RUSSIAN---|$)/i);
-        const deMatch = rawContent.match(/---GERMAN---([\s\S]*?)(?=---ENGLISH---|---RUSSIAN---|$)/i);
-        const ruMatch = rawContent.match(/---RUSSIAN---([\s\S]*?)(?=---ENGLISH---|---GERMAN---|$)/i);
+        // Parse multilingual output based on selected languages
+        let contentEn = "";
+        let contentDe = "";
+        let contentRu = "";
 
-        const contentEn = enMatch?.[1]?.trim() || rawContent;
-        const contentDe = deMatch?.[1]?.trim() || "";
-        const contentRu = ruMatch?.[1]?.trim() || "";
+        if (languages.en) {
+          const enMatch = rawContent.match(/---ENGLISH---([\s\S]*?)(?=---GERMAN---|---RUSSIAN---|$)/i);
+          contentEn = enMatch?.[1]?.trim() || rawContent;
+        }
+        if (languages.de) {
+          const deMatch = rawContent.match(/---GERMAN---([\s\S]*?)(?=---ENGLISH---|---RUSSIAN---|$)/i);
+          contentDe = deMatch?.[1]?.trim() || "";
+        }
+        if (languages.ru) {
+          const ruMatch = rawContent.match(/---RUSSIAN---([\s\S]*?)(?=---ENGLISH---|---GERMAN---|$)/i);
+          contentRu = ruMatch?.[1]?.trim() || "";
+        }
+
+        // If only one language selected and no markers found, use full content
+        if (selectedLangs.length === 1 && !contentEn && !contentDe && !contentRu) {
+          if (languages.en) contentEn = rawContent;
+          if (languages.de) contentDe = rawContent;
+          if (languages.ru) contentRu = rawContent;
+        }
 
         let imageUrl: string | undefined;
         if (shouldGenerateImage === true) {

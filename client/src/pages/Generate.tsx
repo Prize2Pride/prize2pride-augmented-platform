@@ -24,6 +24,8 @@ interface GeneratedEntry {
   contentDe: string;
   contentRu: string;
   imageUrl?: string;
+  audioUrl?: string;
+  videoUrl?: string;
   createdAt?: Date;
 }
 
@@ -74,13 +76,42 @@ function TrilingualBlock({ entry, expandedLangs, toggleLang }: {
 
   return (
     <div className="space-y-3">
-      {/* Image if present */}
+      {/* Poster/Image if present */}
       {entry.imageUrl && (
         <div className="rounded-xl overflow-hidden border border-border/40">
           <img src={entry.imageUrl} alt="Generated visual" className="w-full object-cover max-h-96" />
           <div className="flex items-center justify-between px-3 py-2 bg-card/50 border-t border-border/40">
-            <span className="text-xs text-muted-foreground">AI-Generated Visual</span>
+            <span className="text-xs text-muted-foreground">AI-Generated {entry.outputType === "poster" ? "Poster" : "Visual"}</span>
             <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => window.open(entry.imageUrl, "_blank")}>
+              <Download className="w-3 h-3" /> Download
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Audio/Music if present */}
+      {entry.audioUrl && (
+        <div className="rounded-xl overflow-hidden border border-border/40 bg-card/30 p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Music className="w-4 h-4 text-pink-400" />
+            <span className="text-xs font-medium text-muted-foreground">{entry.outputType === "song" ? "Generated Song" : "Audio"}</span>
+          </div>
+          <audio controls className="w-full h-8 rounded" src={entry.audioUrl} />
+          <div className="flex gap-2 mt-2">
+            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => window.open(entry.audioUrl, "_blank")}>
+              <Download className="w-3 h-3" /> Download
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Video if present */}
+      {entry.videoUrl && (
+        <div className="rounded-xl overflow-hidden border border-border/40 bg-card/30">
+          <video controls className="w-full max-h-96 object-cover" src={entry.videoUrl} />
+          <div className="flex items-center justify-between px-3 py-2 bg-card/50 border-t border-border/40">
+            <span className="text-xs text-muted-foreground">Generated Video</span>
+            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => window.open(entry.videoUrl, "_blank")}>
               <Download className="w-3 h-3" /> Download
             </Button>
           </div>
@@ -161,6 +192,7 @@ export default function Generate() {
   const [prompt, setPrompt] = useState("");
   const [outputType, setOutputType] = useState<OutputType>("text");
   const [generateVisual, setGenerateVisual] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState({ en: true, de: false, ru: false });
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(
     params?.sessionId ? parseInt(params.sessionId) : null
   );
@@ -250,6 +282,7 @@ export default function Generate() {
         prompt: currentPrompt,
         outputType,
         generateImage: generateVisual,
+        languages: selectedLanguages,
       });
 
       // Replace optimistic with real
@@ -485,6 +518,28 @@ export default function Generate() {
               </button>
             </div>
 
+            {/* Language selector */}
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span className="text-xs text-muted-foreground/60 font-medium">Languages:</span>
+              {[
+                { key: "en", label: "English", badge: "lang-en" },
+                { key: "de", label: "Deutsch", badge: "lang-de" },
+                { key: "ru", label: "Русский", badge: "lang-ru" },
+              ].map(({ key, label, badge }) => (
+                <button
+                  key={key}
+                  onClick={() => setSelectedLanguages((prev) => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    selectedLanguages[key as keyof typeof selectedLanguages]
+                      ? `${badge} text-white border border-current/30`
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent border border-transparent"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {/* Prompt input */}
             <div className="flex gap-3">
               <Textarea
@@ -510,7 +565,7 @@ export default function Generate() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground/40 mt-2">
-              Ctrl+Enter to generate · Responses appear simultaneously in EN, DE, RU
+              Ctrl+Enter to generate · Select languages above · All media renders inline
             </p>
           </div>
         </div>
