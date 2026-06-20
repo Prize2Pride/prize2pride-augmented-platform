@@ -1,26 +1,24 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
 // Mock DB functions
 vi.mock("./db", () => ({
   createKnowledgeSession: vi.fn().mockResolvedValue(undefined),
-  getUserSessions: vi.fn().mockResolvedValue([
-    { id: 1, userId: 1, title: "Test Session", language: "all", isPublic: false, createdAt: new Date(), updatedAt: new Date() }
-  ]),
   getSessionById: vi.fn().mockResolvedValue({
-    id: 1, userId: 1, title: "Test Session", language: "all", isPublic: false, createdAt: new Date(), updatedAt: new Date()
+    id: 1, userId: 0, title: "Test Session", language: "all", isPublic: true, createdAt: new Date(), updatedAt: new Date()
   }),
   updateSessionTitle: vi.fn().mockResolvedValue(undefined),
   updateSessionPublic: vi.fn().mockResolvedValue(undefined),
   deleteSession: vi.fn().mockResolvedValue(undefined),
   createKnowledgeEntry: vi.fn().mockResolvedValue(undefined),
   getSessionEntries: vi.fn().mockResolvedValue([]),
-  getPublicEntries: vi.fn().mockResolvedValue([]),
-  getPublicSessions: vi.fn().mockResolvedValue([]),
-  updateUserAvatar: vi.fn().mockResolvedValue(undefined),
-  upsertUser: vi.fn().mockResolvedValue(undefined),
-  getUserByOpenId: vi.fn().mockResolvedValue(undefined),
+  getPublicEntries: vi.fn().mockResolvedValue([
+    { id: 1, sessionId: 1, userId: 0, prompt: "Test", outputType: "text", contentEn: "Test", contentDe: "Test", contentRu: "Test", isPublic: true, createdAt: new Date() }
+  ]),
+  getPublicSessions: vi.fn().mockResolvedValue([
+    { id: 1, userId: 0, title: "Test Session", language: "all", isPublic: true, createdAt: new Date(), updatedAt: new Date() }
+  ]),
 }));
 
 // Mock LLM
@@ -46,25 +44,6 @@ vi.mock("./_core/imageGeneration", () => ({
   generateImage: vi.fn().mockResolvedValue({ url: "https://example.com/image.png" }),
 }));
 
-function createAuthContext(): TrpcContext {
-  return {
-    user: {
-      id: 1,
-      openId: "test-user-123",
-      email: "test@prize2pride.com",
-      name: "Test User",
-      loginMethod: "manus",
-      role: "user",
-      cityAvatar: "london",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      lastSignedIn: new Date(),
-    },
-    req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: vi.fn() } as unknown as TrpcContext["res"],
-  };
-}
-
 function createPublicContext(): TrpcContext {
   return {
     user: null,
@@ -73,59 +52,42 @@ function createPublicContext(): TrpcContext {
   };
 }
 
-describe("Prize2Pride — Auth Router", () => {
-  it("returns null user for unauthenticated requests", async () => {
+describe("Prize2Pride — Open-Access Platform (No Auth)", () => {
+  it("returns null user for all requests", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const user = await caller.auth.me();
     expect(user).toBeNull();
   });
 
-  it("returns user object for authenticated requests", async () => {
-    const ctx = createAuthContext();
-    const caller = appRouter.createCaller(ctx);
-    const user = await caller.auth.me();
-    expect(user).not.toBeNull();
-    expect(user?.name).toBe("Test User");
-    expect(user?.email).toBe("test@prize2pride.com");
-  });
-
   it("clears session cookie on logout", async () => {
-    const ctx = createAuthContext();
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.auth.logout();
     expect(result.success).toBe(true);
   });
-
-  it("updates city avatar for authenticated user", async () => {
-    const ctx = createAuthContext();
-    const caller = appRouter.createCaller(ctx);
-    const result = await caller.auth.updateAvatar({ cityAvatar: "berlin" });
-    expect(result.success).toBe(true);
-  });
 });
 
-describe("Prize2Pride — Knowledge Router", () => {
-  it("creates a new knowledge session", async () => {
-    const ctx = createAuthContext();
+describe("Prize2Pride — Knowledge Router (Fully Public)", () => {
+  it("creates a new public knowledge session", async () => {
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
-    const session = await caller.knowledge.createSession({ title: "Quantum Physics", isPublic: false });
-    // Session is the first item from getUserSessions mock
+    const session = await caller.knowledge.createSession({ title: "Quantum Physics", isPublic: true });
     expect(session).toBeDefined();
-    expect(session?.id).toBe(1);
+    expect(session?.isPublic).toBe(true);
   });
 
-  it("retrieves user sessions", async () => {
-    const ctx = createAuthContext();
+  it("retrieves all public sessions", async () => {
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const sessions = await caller.knowledge.getSessions();
     expect(Array.isArray(sessions)).toBe(true);
     expect(sessions.length).toBeGreaterThan(0);
-    expect(sessions[0].title).toBe("Test Session");
+    expect(sessions[0].isPublic).toBe(true);
   });
 
-  it("generates trilingual knowledge with correct structure", async () => {
-    const ctx = createAuthContext();
+  it("generates trilingual knowledge without authentication", async () => {
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.knowledge.generate({
       sessionId: 1,
@@ -139,8 +101,8 @@ describe("Prize2Pride — Knowledge Router", () => {
     expect(result.outputType).toBe("text");
   });
 
-  it("generates scientific paper format", async () => {
-    const ctx = createAuthContext();
+  it("generates scientific paper format (public)", async () => {
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.knowledge.generate({
       sessionId: 1,
@@ -152,8 +114,8 @@ describe("Prize2Pride — Knowledge Router", () => {
     expect(result.outputType).toBe("scientific");
   });
 
-  it("generates poster format with image", async () => {
-    const ctx = createAuthContext();
+  it("generates poster format with image (public)", async () => {
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.knowledge.generate({
       sessionId: 1,
@@ -164,29 +126,30 @@ describe("Prize2Pride — Knowledge Router", () => {
     expect(result.imageUrl).toBe("https://example.com/image.png");
   });
 
-  it("retrieves public repository entries", async () => {
+  it("retrieves public repository entries without auth", async () => {
     const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const entries = await caller.knowledge.getPublicRepository({ limit: 10 });
     expect(Array.isArray(entries)).toBe(true);
+    expect(entries.length).toBeGreaterThan(0);
   });
 
-  it("updates session title", async () => {
-    const ctx = createAuthContext();
+  it("updates session title (public)", async () => {
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.knowledge.updateSessionTitle({ sessionId: 1, title: "Updated Title" });
     expect(result.success).toBe(true);
   });
 
-  it("toggles session public status", async () => {
-    const ctx = createAuthContext();
+  it("toggles session public status (public)", async () => {
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.knowledge.toggleSessionPublic({ sessionId: 1, isPublic: true });
     expect(result.success).toBe(true);
   });
 
-  it("deletes a session", async () => {
-    const ctx = createAuthContext();
+  it("deletes a session (public)", async () => {
+    const ctx = createPublicContext();
     const caller = appRouter.createCaller(ctx);
     const result = await caller.knowledge.deleteSession({ sessionId: 1 });
     expect(result.success).toBe(true);
@@ -204,7 +167,6 @@ Deutscher Inhalt hier mit detaillierten Informationen.
 ---RUSSIAN---
 Русский контент здесь с подробной информацией.`;
 
-    // Test the parsing logic directly
     const enMatch = raw.match(/---ENGLISH---([\s\S]*?)(?=---GERMAN---|---RUSSIAN---|$)/i);
     const deMatch = raw.match(/---GERMAN---([\s\S]*?)(?=---ENGLISH---|---RUSSIAN---|$)/i);
     const ruMatch = raw.match(/---RUSSIAN---([\s\S]*?)(?=---ENGLISH---|---GERMAN---|$)/i);
@@ -217,7 +179,6 @@ Deutscher Inhalt hier mit detaillierten Informationen.
   it("handles missing language sections gracefully", () => {
     const raw = "Some content without language markers";
     const enMatch = raw.match(/---ENGLISH---([\s\S]*?)(?=---GERMAN---|---RUSSIAN---|$)/i);
-    // Falls back to raw content
     const contentEn = enMatch?.[1]?.trim() ?? raw;
     expect(contentEn).toBe("Some content without language markers");
   });

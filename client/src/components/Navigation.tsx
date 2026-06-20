@@ -36,7 +36,7 @@ export default function Navigation() {
     { href: "/generate", label: t.nav.generate, icon: Sparkles },
     { href: "/avatars", label: t.nav.avatars, icon: Users },
     { href: "/repository", label: t.nav.repository, icon: BookOpen },
-    ...(isAuthenticated ? [{ href: "/history", label: t.nav.history, icon: Clock }] : []),
+    { href: "/history", label: t.nav.history, icon: Clock },
   ];
 
   return (
@@ -94,39 +94,23 @@ export default function Navigation() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Auth */}
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <div className="w-7 h-7 rounded-full p2p-gradient flex items-center justify-center">
-                      <span className="text-black text-xs font-bold">
-                        {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-                      </span>
-                    </div>
-                    <span className="hidden sm:block text-sm text-muted-foreground max-w-24 truncate">
-                      {user?.name ?? "User"}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card border-border">
-                  <DropdownMenuItem asChild>
-                    <Link href="/history" className="cursor-pointer">{t.nav.history}</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => logout()} className="text-destructive cursor-pointer">
-                    {t.nav.logout}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button
-                size="sm"
-                className="p2p-gradient text-black font-semibold hover:opacity-90 transition-opacity"
-                onClick={() => window.location.href = getLoginUrl()}
-              >
-                {t.nav.login}
-              </Button>
-            )}
+            {/* Language Switcher */}
+            <div className="flex items-center gap-1 bg-card/50 rounded-lg p-1 border border-border/30">
+              {Object.entries(LANG_LABELS).map(([lang, label]) => (
+                <button
+                  key={lang}
+                  onClick={() => setLanguage(lang as Language)}
+                  className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${
+                    language === lang
+                      ? "bg-primary text-black"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title={LANG_FULL[lang as Language]}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
             {/* Mobile menu toggle */}
             <Button

@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
@@ -159,7 +157,6 @@ export default function Generate() {
   const [, params] = useRoute("/generate/:sessionId");
   const [, navigate] = useLocation();
   const { t } = useLanguage();
-  const { isAuthenticated, user } = useAuth();
 
   const [prompt, setPrompt] = useState("");
   const [outputType, setOutputType] = useState<OutputType>("text");
@@ -175,10 +172,10 @@ export default function Generate() {
   const utils = trpc.useUtils();
   const createSession = trpc.knowledge.createSession.useMutation();
   const generateMutation = trpc.knowledge.generate.useMutation();
-  const sessionsQuery = trpc.knowledge.getSessions.useQuery(undefined, { enabled: isAuthenticated });
+  const sessionsQuery = trpc.knowledge.getSessions.useQuery();
   const sessionEntriesQuery = trpc.knowledge.getSessionEntries.useQuery(
     { sessionId: currentSessionId! },
-    { enabled: !!currentSessionId && isAuthenticated }
+    { enabled: !!currentSessionId }
   );
 
   // Load existing session entries
@@ -214,10 +211,6 @@ export default function Generate() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-    if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
 
     let sessionId = currentSessionId;
 
@@ -295,31 +288,6 @@ export default function Generate() {
   };
 
   const isGenerating = generateMutation.isPending || createSession.isPending;
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center glass-card rounded-2xl p-12 max-w-md mx-4">
-            <Lock className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Sign In to Generate
-            </h2>
-            <p className="text-muted-foreground mb-6 text-sm">
-              Access the Prize2Pride Knowledge Engine — generate unlimited trilingual knowledge across all formats.
-            </p>
-            <Button
-              className="p2p-gradient text-black font-bold w-full"
-              onClick={() => window.location.href = getLoginUrl()}
-            >
-              Sign In to Prize2Pride
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

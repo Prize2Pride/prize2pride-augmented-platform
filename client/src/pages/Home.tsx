@@ -1,6 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+
 import { Link } from "wouter";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
@@ -38,7 +37,6 @@ const CITY_CONFIGS = {
 
 export default function Home() {
   const { t, language } = useLanguage();
-  const { isAuthenticated } = useAuth();
 
   const cities = ["berlin", "moscow", "london"] as const;
 
@@ -95,25 +93,13 @@ export default function Home() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {isAuthenticated ? (
-                <Link href="/generate">
-                  <Button size="lg" className="p2p-gradient text-black font-bold px-8 h-12 hover:opacity-90 transition-opacity gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    {t.hero.cta}
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-              ) : (
-                <Button
-                  size="lg"
-                  className="p2p-gradient text-black font-bold px-8 h-12 hover:opacity-90 transition-opacity gap-2"
-                  onClick={() => window.location.href = getLoginUrl()}
-                >
+              <Link href="/generate">
+                <Button size="lg" className="p2p-gradient text-black font-bold px-8 h-12 hover:opacity-90 transition-opacity gap-2">
                   <Sparkles className="w-4 h-4" />
                   {t.hero.cta}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
-              )}
+              </Link>
               <Link href="/repository">
                 <Button size="lg" variant="outline" className="px-8 h-12 border-border hover:bg-accent gap-2">
                   <BookOpen className="w-4 h-4" />
@@ -274,23 +260,12 @@ export default function Home() {
                 Join Prize2Pride and start generating unlimited knowledge across three languages. Your city avatar awaits.
               </p>
               <div className="flex gap-4 justify-center">
-                {isAuthenticated ? (
-                  <Link href="/generate">
-                    <Button size="lg" className="p2p-gradient text-black font-bold px-10 h-12 gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      {t.hero.cta}
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    size="lg"
-                    className="p2p-gradient text-black font-bold px-10 h-12 gap-2"
-                    onClick={() => window.location.href = getLoginUrl()}
-                  >
+                <Link href="/generate">
+                  <Button size="lg" className="p2p-gradient text-black font-bold px-10 h-12 gap-2">
                     <Sparkles className="w-4 h-4" />
-                    {t.nav.login} to Prize2Pride
+                    {t.hero.cta}
                   </Button>
-                )}
+                </Link>
               </div>
             </div>
           </div>

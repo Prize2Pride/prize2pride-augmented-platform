@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -14,12 +13,11 @@ import {
 
 export default function History() {
   const { t } = useLanguage();
-  const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
-  const sessionsQuery = trpc.knowledge.getSessions.useQuery(undefined, { enabled: isAuthenticated });
+  const sessionsQuery = trpc.knowledge.getSessions.useQuery();
   const createSession = trpc.knowledge.createSession.useMutation();
   const deleteSession = trpc.knowledge.deleteSession.useMutation();
   const togglePublic = trpc.knowledge.toggleSessionPublic.useMutation();
@@ -51,31 +49,6 @@ export default function History() {
       toast.error("Failed to update session");
     }
   };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center glass-card rounded-2xl p-12 max-w-md mx-4">
-            <Lock className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Sign In to View History
-            </h2>
-            <p className="text-muted-foreground mb-6 text-sm">
-              Your knowledge generation history is tied to your Prize2Pride profile.
-            </p>
-            <Button
-              className="p2p-gradient text-black font-bold w-full"
-              onClick={() => window.location.href = getLoginUrl()}
-            >
-              Sign In
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
